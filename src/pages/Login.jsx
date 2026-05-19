@@ -92,7 +92,7 @@ export default function Login({ onLogin }) {
                         >
                             {loading === 'form'
                                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
-                                : <>'Sign in <ArrowRight className="w-4 h-4" /></>
+                                : <>Sign in <ArrowRight className="w-4 h-4" /></>
                             }
                         </button>
                     </form>
@@ -123,7 +123,7 @@ export default function Login({ onLogin }) {
                                     <div className="font-bold text-slate-900 mt-1">{u.name}</div>
                                     <div className="text-sm text-slate-500 mt-0.5">{u.email}</div>
                                     <div className="mt-4 text-sm text-indigo-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                                        {isLoading ? 'Signing in...' : <>'Continue <ArrowRight className="w-4 h-4" /></>}
+                                        {isLoading ? 'Signing in...' : <>Continue <ArrowRight className="w-4 h-4" /></>}
                                     </div>
                                 </button>
                             );
