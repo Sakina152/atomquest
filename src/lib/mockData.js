@@ -15,12 +15,12 @@ export const GOAL_SHEETS = [
 ];
 
 export const GOALS = [
-    { id: 'g1', sheet_id: 's1', title: 'Increase quarterly revenue', thrust: 'Revenue Growth', uom: 'min', target: 5000000, weightage: 30, is_shared: false, description: 'Drive top-line growth across all regions.' },
+    { id: 'g1', sheet_id: 's1', title: 'Increase quarterly revenue', thrust: 'Revenue Growth', uom: 'min', target: 5000000, weightage: 25, is_shared: false, description: 'Drive top-line growth across all regions.' },
     { id: 'g2', sheet_id: 's1', title: 'Reduce customer churn rate', thrust: 'Retention', uom: 'max', target: 5, weightage: 20, is_shared: false, description: 'Keep churn under 5% annually.' },
     { id: 'g3', sheet_id: 's1', title: 'Launch product v2.0', thrust: 'Product Delivery', uom: 'timeline', target_date: '2026-09-30', weightage: 20, is_shared: false, description: 'Ship v2 on schedule.' },
     { id: 'g4', sheet_id: 's1', title: 'Zero critical incidents', thrust: 'Reliability', uom: 'zero', target: 0, weightage: 15, is_shared: true, description: 'Maintain platform reliability.' },
     { id: 'g5', sheet_id: 's1', title: 'Grow team headcount', thrust: 'People', uom: 'min', target: 3, weightage: 10, is_shared: false, description: 'Hire 3 senior engineers.' },
-    { id: 'g6', sheet_id: 's1', title: 'Complete compliance audit', thrust: 'Governance', uom: 'zero', target: 0, weightage: 5, is_shared: false, description: 'Pass annual SOC2 audit.' },
+    { id: 'g6', sheet_id: 's1', title: 'Complete compliance audit', thrust: 'Governance', uom: 'zero', target: 0, weightage: 10, is_shared: false, description: 'Pass annual SOC2 audit.' },
 ];
 
 export const ACHIEVEMENTS = [
