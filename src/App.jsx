@@ -99,12 +99,7 @@ export default function App() {
         <Login onLogin={handleLogin} />
       ) : (
         <div className="flex min-h-screen bg-slate-50">
-          <Sidebar
-            user={user}
-            active={route}
-            onNavigate={setRoute}
-            onLogout={handleLogout}
-          />
+          <Sidebar user={user} profile={profile} active={route} onNavigate={setRoute} onLogout={handleLogout} />
           <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
             {user.role === 'employee' && route === 'goalsheet' && <GoalSheet user={user} profile={profile} />}
             {user.role === 'employee' && route === 'tracker' && <AchievementTracker user={user} profile={profile} />}
