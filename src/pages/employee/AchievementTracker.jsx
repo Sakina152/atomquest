@@ -180,7 +180,14 @@ export default function AchievementTracker({ user, profile }) {
                                         </td>
                                         <td className="px-4 py-3">
                                             {g.uom_type === 'timeline' ? (
-                                                <span className="text-xs text-slate-500">Use status →</span>
+                                                <input
+                                                    type="date"
+                                                    disabled={!windowOpen}
+                                                    value={d.actual ?? ''}
+                                                    onChange={(e) => handleChange(g.id, activeQ, { actual: e.target.value })}
+                                                    className="px-2 py-1 rounded border border-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm"
+                                                    title="Enter completion date"
+                                                />
                                             ) : (
                                                 <input
                                                     type="number"

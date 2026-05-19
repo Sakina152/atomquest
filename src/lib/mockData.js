@@ -1,4 +1,4 @@
-export const TODAY = '2026-05-16';
+export const TODAY = new Date().toISOString().slice(0, 10); // real system date
 
 export const USERS = [
     { id: 'u1', name: 'Charlie Singh', role: 'employee', manager: 'u4', email: 'charlie@atomquest.com' },

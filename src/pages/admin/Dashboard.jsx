@@ -3,7 +3,9 @@ import { weightedFinal } from '../../lib/scoring';
 import StatusBadge from '../../components/StatusBadge';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/Toast';
-import { Users, CheckCircle2, Clock, FileEdit } from 'lucide-react';
+import { Users, CheckCircle2, Clock, FileEdit, LockOpen, Check, X } from 'lucide-react';
+
+const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 export default function Dashboard({ profile }) {
     const [employees, setEmployees] = useState([]);
@@ -11,10 +13,12 @@ export default function Dashboard({ profile }) {
     const [goals, setGoals] = useState({});
     const [achievements, setAchievements] = useState({});
     const [managers, setManagers] = useState({});
+    const [checkins, setCheckins] = useState({}); // keyed by sheet_id → set of quarters
+    const [unlocking, setUnlocking] = useState(null); // sheet id being unlocked
     const [loading, setLoading] = useState(true);
     const { push } = useToast();
 
-    // ─── SUPABASE: load all employees + sheets + goals + achievements ────────────
+    // ─── SUPABASE: load all employees + sheets + goals + achievements + checkins ──
     useEffect(() => {
         if (!profile?.id) return;
         loadDashboard();
@@ -31,7 +35,7 @@ export default function Dashboard({ profile }) {
             const emps = profilesData?.filter((p) => p.role === 'employee') || [];
             setEmployees(emps);
 
-            // manager map
+            // manager map (all roles)
             const mgrMap = {};
             profilesData?.forEach((p) => { mgrMap[p.id] = p; });
             setManagers(mgrMap);
@@ -50,11 +54,13 @@ export default function Dashboard({ profile }) {
 
             if (!sheetData?.length) return;
 
+            const sheetIds = sheetData.map((s) => s.id);
+
             // all goals
             const { data: goalsData } = await supabase
                 .from('goals')
                 .select('*')
-                .in('sheet_id', sheetData.map((s) => s.id));
+                .in('sheet_id', sheetIds);
 
             const goalsMap = {};
             goalsData?.forEach((g) => {
@@ -63,22 +69,65 @@ export default function Dashboard({ profile }) {
             });
             setGoals(goalsMap);
 
-            if (!goalsData?.length) return;
+            if (goalsData?.length) {
+                // all achievements
+                const { data: achData } = await supabase
+                    .from('achievements')
+                    .select('*')
+                    .in('goal_id', goalsData.map((g) => g.id));
 
-            // all achievements
-            const { data: achData } = await supabase
-                .from('achievements')
-                .select('*')
-                .in('goal_id', goalsData.map((g) => g.id));
+                const achMap = {};
+                achData?.forEach((a) => { achMap[a.goal_id] = a; });
+                setAchievements(achMap);
+            }
 
-            const achMap = {};
-            achData?.forEach((a) => { achMap[a.goal_id] = a; });
-            setAchievements(achMap);
+            // all check-ins — keyed sheet_id → Set of quarters completed
+            const { data: checkinData } = await supabase
+                .from('checkins')
+                .select('sheet_id, quarter')
+                .in('sheet_id', sheetIds);
+
+            const ciMap = {};
+            checkinData?.forEach((c) => {
+                if (!ciMap[c.sheet_id]) ciMap[c.sheet_id] = new Set();
+                ciMap[c.sheet_id].add(c.quarter);
+            });
+            setCheckins(ciMap);
 
         } catch (err) {
             push('Failed to load dashboard: ' + err.message, 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // ─── SUPABASE: unlock a sheet back to draft (Admin override) ─────────────────
+    const handleUnlock = async (sheet, empName) => {
+        if (!window.confirm(`Unlock ${empName}'s goal sheet? This will set it back to Draft so goals can be edited.`)) return;
+        setUnlocking(sheet.id);
+        try {
+            const { error } = await supabase
+                .from('goal_sheets')
+                .update({ status: 'draft' })
+                .eq('id', sheet.id);
+            if (error) throw error;
+
+            // audit log
+            await supabase.from('audit_logs').insert({
+                entity_type: 'goal_sheets',
+                entity_id: sheet.id,
+                changed_by: profile.id,
+                change_type: 'UNLOCK',
+                new_value: { previous_status: sheet.status, unlocked_by: profile.id },
+                changed_at: new Date().toISOString(),
+            });
+
+            push(`${empName}'s sheet unlocked`, 'success');
+            await loadDashboard();
+        } catch (err) {
+            push('Unlock failed: ' + err.message, 'error');
+        } finally {
+            setUnlocking(null);
         }
     };
 
@@ -130,8 +179,9 @@ export default function Dashboard({ profile }) {
 
             {/* Completion grid */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-200">
+                <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
                     <h2 className="font-semibold text-slate-900">Completion Grid</h2>
+                    <span className="text-xs text-slate-500">Check-in ✅ = manager comment saved for that quarter</span>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -142,6 +192,10 @@ export default function Dashboard({ profile }) {
                                 <th className="px-4 py-3">Sheet Status</th>
                                 <th className="px-4 py-3">Goals</th>
                                 <th className="px-4 py-3">YTD Score</th>
+                                {QUARTERS.map((q) => (
+                                    <th key={q} className="px-3 py-3 text-center">{q}</th>
+                                ))}
+                                <th className="px-4 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -150,8 +204,11 @@ export default function Dashboard({ profile }) {
                                 const sheetGoals = sheet ? (goals[sheet.id] || []) : [];
                                 const score = sheetGoals.length ? weightedFinal(sheetGoals, achievements) : 0;
                                 const mgr = managers[e.manager_id];
+                                const completedQs = sheet ? (checkins[sheet.id] || new Set()) : new Set();
+                                const canUnlock = sheet && (sheet.status === 'approved' || sheet.status === 'submitted');
+
                                 return (
-                                    <tr key={e.id}>
+                                    <tr key={e.id} className="hover:bg-slate-50">
                                         <td className="px-4 py-3 font-medium text-slate-900">{e.full_name}</td>
                                         <td className="px-4 py-3 text-slate-700">{mgr?.full_name || '—'}</td>
                                         <td className="px-4 py-3">
@@ -159,6 +216,27 @@ export default function Dashboard({ profile }) {
                                         </td>
                                         <td className="px-4 py-3 text-slate-700">{sheetGoals.length}</td>
                                         <td className="px-4 py-3 font-semibold text-indigo-600">{score.toFixed(0)}%</td>
+                                        {QUARTERS.map((q) => (
+                                            <td key={q} className="px-3 py-3 text-center">
+                                                {completedQs.has(q)
+                                                    ? <Check className="w-4 h-4 text-green-600 mx-auto" />
+                                                    : <X className="w-4 h-4 text-slate-300 mx-auto" />
+                                                }
+                                            </td>
+                                        ))}
+                                        <td className="px-4 py-3 text-center">
+                                            {canUnlock && (
+                                                <button
+                                                    onClick={() => handleUnlock(sheet, e.full_name)}
+                                                    disabled={unlocking === sheet.id}
+                                                    title="Unlock sheet for editing"
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                                >
+                                                    <LockOpen className="w-3 h-3" />
+                                                    {unlocking === sheet.id ? 'Unlocking…' : 'Unlock'}
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}

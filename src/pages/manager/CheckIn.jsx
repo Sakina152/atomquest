@@ -168,6 +168,7 @@ export default function CheckIn({ user, profile }) {
                                 <th className="px-4 py-3">Goal</th>
                                 <th className="px-4 py-3">Target</th>
                                 <th className="px-4 py-3">Actual ({quarter})</th>
+                                <th className="px-4 py-3">Status</th>
                                 <th className="px-4 py-3">Score</th>
                             </tr>
                         </thead>
@@ -193,7 +194,17 @@ export default function CheckIn({ user, profile }) {
                                             {uom === 'timeline' ? g.target_date : g.target_value}
                                         </td>
                                         <td className="px-4 py-3 text-slate-700">
-                                            {a?.actual_value ?? '—'}
+                                            {uom === 'timeline' ? (a?.actual_value || '—') : (a?.actual_value ?? '—')}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {a?.status ? (
+                                                <span className={`px-2 py-0.5 text-xs font-semibold rounded capitalize ${
+                                                    a.status === 'completed' ? 'bg-green-100 text-green-700'
+                                                    : a.status === 'on_track' ? 'bg-blue-100 text-blue-700'
+                                                    : a.status === 'at_risk' ? 'bg-amber-100 text-amber-700'
+                                                    : 'bg-gray-100 text-gray-600'
+                                                }`}>{a.status.replace('_', ' ')}</span>
+                                            ) : <span className="text-slate-400 text-xs">—</span>}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 text-xs font-bold rounded ${scoreColor(score)}`}>

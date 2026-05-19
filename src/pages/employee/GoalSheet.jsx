@@ -158,6 +158,13 @@ export default function GoalSheet({ user, profile }) {
 
     // ─── SUPABASE: update goal_sheets set status='submitted' ────────────────────
     const handleSubmitSheet = async () => {
+        // Hard validation — re-check all rules before submitting
+        if (goals.length === 0) { push('Add at least one goal before submitting', 'error'); return; }
+        if (totalWeight !== 100) { push(`Total weightage must be 100% (currently ${totalWeight}%)`, 'error'); return; }
+        const belowMin = goals.find((g) => Number(g.weightage) < 10);
+        if (belowMin) { push(`"${belowMin.title}" has less than 10% weightage (minimum is 10%)`, 'error'); return; }
+        if (goals.length > 8) { push('Maximum 8 goals allowed', 'error'); return; }
+
         setSaving(true);
         const { error } = await supabase
             .from('goal_sheets')
