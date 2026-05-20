@@ -1,6 +1,10 @@
 # AtomQuest Goal Setting & Tracking Portal
 
+[![Live on Vercel](https://img.shields.io/badge/Live%20Demo-atomquest--portal01.vercel.app-000?logo=vercel&logoColor=white&style=for-the-badge)](https://atomquest-portal01.vercel.app/)
+
 A structured, enterprise-grade web portal that digitises the complete **OKR / KPI lifecycle** — from goal creation and managerial approval through quarterly check-ins and performance reporting — eliminating the fragmentation inherent in spreadsheet-based appraisal workflows.
+
+> 🔗 **Live URL:** [https://atomquest-portal01.vercel.app/](https://atomquest-portal01.vercel.app/)
 
 ---
 
@@ -321,19 +325,45 @@ atomquest-portal/
 
 ## Deployment
 
-The project is pre-configured for deployment to **Cloudflare Pages** via the `@cloudflare/vite-plugin` integration defined in `wrangler.jsonc`.
+The portal is deployed on **Vercel** with automatic CI/CD triggered on every push to `main`.
 
-```bash
-# Production build
-npm run build
+🚀 **Live URL:** [https://atomquest-portal01.vercel.app/](https://atomquest-portal01.vercel.app/)
 
-# Deploy via Wrangler CLI
-npx wrangler pages deploy dist/
+### How It Works
+
+The project uses a TanStack Start SSR build pipeline that outputs to `dist/client/` (static assets) and `dist/server/` (Cloudflare Workers bundle). A `postbuild` script copies `index.html` into `dist/client/` so Vercel can serve it as a static SPA.
+
+**Vercel project settings** (configured via `vercel.json`):
+
+| Setting | Value |
+|---|---|
+| Build Command | `npm run build:vercel` |
+| Output Directory | `dist/client` |
+| Framework Preset | None (custom) |
+| SPA Rewrite | All routes → `/index.html` |
+
+### Deploy Your Own
+
+1. Fork the repository and import it into [Vercel](https://vercel.com)
+2. Vercel will auto-detect `vercel.json` — no manual settings required
+3. Add the following environment variables in **Vercel → Settings → Environment Variables**:
+
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
 ```
 
-Alternatively, connect the GitHub repository to a Cloudflare Pages project for **CI/CD on every push to `main`**.
+4. Trigger a deployment — every subsequent push to `main` deploys automatically
 
-Set the same environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) in the Cloudflare Pages dashboard under **Settings → Environment Variables**.
+### Manual Build & Preview
+
+```bash
+# Build exactly as Vercel does (outputs to dist/client/ with index.html)
+npm run build:vercel
+
+# Preview the production build locally
+npm run preview
+```
 
 ---
 
