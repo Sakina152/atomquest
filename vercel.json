@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist/client",
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
